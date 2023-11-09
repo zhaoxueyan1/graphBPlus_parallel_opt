@@ -11,6 +11,10 @@ The OpenMP C++ code can be compiled as follows:
 
 `  g++ -O3 -march=native -fopenmp graphBplus_02.cpp -o graphBplus`
 
+The Serial C++ code can be compiled as follows:
+
+`  g++ -O3 graphBplus_02_serial.cpp -o Serial_graphBplus`
+
 To run the code on the input file graph.csv with 100 samples and save the results of the balanced solutions in out.csv, enter:
 
 `  ./graphBplus graph.csv 100 out.csv`
