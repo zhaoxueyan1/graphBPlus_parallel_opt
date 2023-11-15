@@ -484,13 +484,13 @@ static double generateSpanningTree(const Graph& g, const int root, const int see
   for (int i = g.nodes - remaining_n; i < g.nodes; i++){
     label[i] = 1;
   }
-  for (int level = levels - 1; level > 0; level--) {  // skip level 0
-    for (int i = border[level]; i < border[level + 1]; i++) {
-      const int node = queue[i];
-      label[parent[node] >> 2] += label[node];
-    }
-  }
-  /*int remaining_l = levels % 2;
+  // for (int level = levels - 1; level > 0; level--) {  // skip level 0
+  //   for (int i = border[level]; i < border[level + 1]; i++) {
+  //     const int node = queue[i];
+  //     label[parent[node] >> 2] += label[node];
+  //   }
+  // }
+  int remaining_l = levels % 2;
   for (int level = levels - 1; level > remaining_l; level -= 2){ // skip level 0 and handle two levels at a time
     // First iteration of unrolling
     for (int i = border[level]; i < border[level + 1]; i++){
@@ -498,6 +498,9 @@ static double generateSpanningTree(const Graph& g, const int root, const int see
       label[parent[node] >> 2] += label[node];
     }
     int nextLevel = level - 1;
+    if(nextLevel == 0){
+      continue;
+    }
     for (int i = border[nextLevel]; i < border[nextLevel + 1]; i++)
     {
       const int node = queue[i];
@@ -509,7 +512,7 @@ static double generateSpanningTree(const Graph& g, const int root, const int see
       const int node = queue[i];
       label[parent[node] >> 2] += label[node];
     }
-  }*/
+  }
 
   if (verify) {
     if (label[root] != g.nodes) {printf("ERROR: root count mismatch\n"); exit(-1);}
@@ -517,6 +520,7 @@ static double generateSpanningTree(const Graph& g, const int root, const int see
 
   // top down: label tree + set nlist flag + set edge info + move tree nodes to front + make parent edge first in list
   label[root] = 0;
+#if 0
   for (int level = 0; level < levels; level++) {
     for (int i = border[level]; i < border[level + 1]; i++) {
       const int node = queue[i];
@@ -583,7 +587,8 @@ static double generateSpanningTree(const Graph& g, const int root, const int see
       }
     }
   }
-  /*for (int level = 0; level < levels - remaining_l; level+=2){
+#else
+  for (int level = 0; level < levels - remaining_l; level+=2){
     for (int i = border[level]; i < border[level + 1]; i++){
       const int node = queue[i];
       const int par = parent[node] >> 2;
@@ -811,8 +816,8 @@ static double generateSpanningTree(const Graph& g, const int root, const int see
         }
       }
     }
-  }*/
-
+  }
+#endif
   const double rt = timer.elapsed();
 
   // update inTree
