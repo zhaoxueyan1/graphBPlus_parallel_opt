@@ -10,7 +10,7 @@ declare -a output_files=("out.csv" "amazonVideo_core5_out.csv" "Instruments_out.
 
 for i in "${!input_files[@]}"
 do
-	log_dir=$root_dir/results_unfold_perf/graphBplus_O0_${bench_lang}/${bench_type}/$((i+1))/
+	log_dir=$root_dir/results_omp_perf/graphBplus_O0_${bench_lang}/${bench_type}/$((i+1))/
     if [ -d $log_dir ]; then
         echo -e "WARN: $log_dir will removed after 5 seconds *******"
         sleep 5
@@ -19,7 +19,7 @@ do
     set -x
     input_file="${input_files[i]}"
     output_file="${output_files[i]}"
-    cmd_line="${work_dir}/graphBplus_serial_unfold ${root_dir}/data/${input_file} 100 ${root_dir}/data/results/${output_file}"
+    cmd_line="${work_dir}/graphBplus_OMP ${root_dir}/data/${input_file} 100 ${root_dir}/data/OMP_results/${output_file}"
     cd $work_dir
     sudo time perf stat -r 3 \
         -e 'L1-dcache-load-misses,L1-icache-load-misses,L1-dcache-loads' \

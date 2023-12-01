@@ -150,9 +150,19 @@ static Graph readGraph(const char* const name)
 
   // compute CCs with union find
   int* const label = new int [cnt];
-  for (int v = 0; v < cnt; v++) {
+  int remaining = cnt % 4;
+  for (int v = 0; v < cnt - remaining; v+=4) {
+    label[v] = v;
+    label[v+1] = v + 1;
+    label[v+2] = v + 2;
+    label[v+3] = v + 3;
+  }
+  for (int v = cnt - remaining; v < cnt; v++) {
     label[v] = v;
   }
+  /*for (int v = 0; v < cnt; v++) {
+    label[v] = v;
+  }*/
   for (auto ele: set3) {
     const int src = map[std::get<0>(ele)];
     const int dst = map[std::get<1>(ele)];
@@ -173,22 +183,32 @@ static Graph readGraph(const char* const name)
     }
     label[v] = vstat;
   }*/
-  // 假设 cnt 是非负整数
-  int remaining = cnt % 2;
 
   // 循环展开
-  for (int v = 0; v < cnt - remaining; v += 2){
+  for (int v = 0; v < cnt - remaining; v += 4){
     int next1, vstat1 = label[v];
     while (vstat1 > (next1 = label[vstat1])){
       vstat1 = next1;
     }
     label[v] = vstat1;
 
-    int next2, vstat2 = label[v + 1];
+    int next2, vstat2 = label[v+1];
     while (vstat2 > (next2 = label[vstat2])){
       vstat2 = next2;
     }
-    label[v + 1] = vstat2;
+    label[v+1] = vstat2;
+
+    int next3, vstat3 = label[v+2];
+    while (vstat3 > (next3 = label[vstat3])){
+      vstat3 = next3;
+    }
+    label[v+2] = vstat3;
+
+    int next4, vstat4 = label[v+3];
+    while (vstat4 > (next4 = label[vstat4])){
+      vstat4 = next4;
+    }
+    label[v+3] = vstat4;
   }
 
   // 处理剩余的部分
@@ -210,18 +230,22 @@ static Graph readGraph(const char* const name)
   }*/
 
   // 循环展开
-  for (int v = 0; v < cnt - remaining; v += 2){
+  for (int v = 0; v < cnt - remaining; v += 4){
     size[v] = 0;
     size[v+1] = 0;
+    size[v+2] = 0;
+    size[v+3] = 0;
   }
 
   for (int v = cnt - remaining; v < cnt; ++v){
     size[v] = 0;
   }
 
-  for (int v = 0; v < cnt - remaining; v += 2){
+  for (int v = 0; v < cnt - remaining; v += 4){
     size[label[v]]++;
-    size[label[v + 1]]++;
+    size[label[v+1]]++;
+    size[label[v+2]]++;
+    size[label[v+3]]++;
   }
 
   // 处理剩余的部分
@@ -235,15 +259,22 @@ static Graph readGraph(const char* const name)
     if (size[hi] < size[v]) hi = v;
   }*/
 
-  // 循环展开，每次增加2
-  for (int v = 1; v < cnt - remaining; v += 2){
-    if (size[hi] < size[v])
-      hi = v;
-    if (size[hi] < size[v + 1])
+  for (int v = 0; v < cnt - remaining; v += 4){
+    if(v == 0){
+      hi = 0;
+    }else{
+      if (size[hi] < size[v]){
+        hi = v;
+      }
+    }
+    if (size[hi] < size[v+1])
       hi = v + 1;
+    if (size[hi] < size[v+2])
+      hi = v + 2;
+    if (size[hi] < size[v+3])
+      hi = v + 3;
   }
 
-  // 处理剩余的部分
   for (int v = cnt - remaining; v < cnt; ++v){
     if (size[hi] < size[v])
       hi = v;
@@ -295,9 +326,8 @@ static Graph readGraph(const char* const name)
       acc++;
     }
   }*/
-  int remaining_n = g.nodes % 2;
-  // 偶数轮循环展开
-  for (int v = 0; v < g.nodes - remaining_n; v += 2){
+  int remaining_n = g.nodes % 4;
+  for (int v = 0; v < g.nodes - remaining_n; v += 4){
     g.nindex[v] = acc;
     for (auto ele : node[v]){
       const int dst = ele.first;
@@ -307,8 +337,26 @@ static Graph readGraph(const char* const name)
       acc++;
     }
 
-    g.nindex[v + 1] = acc;
+    g.nindex[v+1] = acc;
     for (auto ele : node[v + 1]){
+      const int dst = ele.first;
+      const int wei = ele.second;
+      g.nlist[acc] = dst;
+      g.eweight[acc] = wei;
+      acc++;
+    }
+
+    g.nindex[v+2] = acc;
+    for (auto ele : node[v+2]){
+      const int dst = ele.first;
+      const int wei = ele.second;
+      g.nlist[acc] = dst;
+      g.eweight[acc] = wei;
+      acc++;
+    }
+
+    g.nindex[v+3] = acc;
+    for (auto ele : node[v + 3]){
       const int dst = ele.first;
       const int wei = ele.second;
       g.nlist[acc] = dst;
@@ -355,10 +403,12 @@ static void init(const Graph& g, int* const inCC, EdgeInfo* const einfo, int* co
   /*for (int j = 0; j < g.edges; j++) {
     g.nlist[j] <<= 1;
   }*/
-  int remaining_e = g.edges % 2;
-  for (int j = 0; j < g.edges - remaining_e; j+=2){
+  int remaining_e = g.edges % 4;
+  for (int j = 0; j < g.edges - remaining_e; j+=4){
     g.nlist[j] <<= 1;
     g.nlist[j+1] <<= 1;
+    g.nlist[j+2] <<= 1;
+    g.nlist[j+3] <<= 1;
   }
   for (int j = g.edges - remaining_e; j < g.edges; j++){
     g.nlist[j] <<= 1;
@@ -368,10 +418,12 @@ static void init(const Graph& g, int* const inCC, EdgeInfo* const einfo, int* co
   /*for (int v = 0; v < g.nodes; v++) {
     inCC[v] = 0;
   }*/
-  int remaining_n = g.nodes % 2;
-  for (int v = 0; v < g.nodes - remaining_n; v+=2){
+  int remaining_n = g.nodes % 4;
+  for (int v = 0; v < g.nodes - remaining_n; v+=4){
     inCC[v] = 0;
     inCC[v+1] = 0;
+    inCC[v+2] = 0;
+    inCC[v+3] = 0;
   }
   for (int v = g.nodes - remaining_n; v < g.nodes; v++){
     inCC[v] = 0;
@@ -381,9 +433,11 @@ static void init(const Graph& g, int* const inCC, EdgeInfo* const einfo, int* co
   /*for (int j = 0; j < g.edges; j++) {
     einfo[j].end = (g.eweight[j] == -1) ? 1 : 0;
   }*/
-  for (int j = 0; j < g.edges - remaining_e; j+=2){
+  for (int j = 0; j < g.edges - remaining_e; j+=4){
     einfo[j].end = (g.eweight[j] == -1) ? 1 : 0;
     einfo[j+1].end = (g.eweight[j+1] == -1) ? 1 : 0;
+    einfo[j+2].end = (g.eweight[j+2] == -1) ? 1 : 0;
+    einfo[j+3].end = (g.eweight[j+3] == -1) ? 1 : 0;
   }
   for (int j = g.edges - remaining_e; j < g.edges; j++){
     einfo[j].end = (g.eweight[j] == -1) ? 1 : 0;
@@ -394,11 +448,15 @@ static void init(const Graph& g, int* const inCC, EdgeInfo* const einfo, int* co
     inTree[j] = 0;
     negCnt[j] = 0;
   }*/
-  for (int j = 0; j < g.edges - remaining_e; j+=2){
+  for (int j = 0; j < g.edges - remaining_e; j+=4){
     inTree[j] = 0;
     negCnt[j] = 0;
     inTree[j+1] = 0;
     negCnt[j+1] = 0;
+    inTree[j+2] = 0;
+    negCnt[j+2] = 0;
+    inTree[j+3] = 0;
+    negCnt[j+3] = 0;
   }
   for (int j = g.edges - remaining_e; j < g.edges; j++)
   {
@@ -414,18 +472,22 @@ static double generateSpanningTree(const Graph& g, const int root, const int see
   // initialize
   //for (int j = 0; j < g.edges; j++) g.nlist[j] &= ~1;  // edge is not in tree
   //for (int i = 0; i < g.nodes; i++) parent[i] = -1;
-  int remaining_e = g.edges % 2;
-  int remaining_n = g.nodes % 2;
-  for (int j = 0; j < g.edges - remaining_e; j+=2){
+  int remaining_e = g.edges % 4;
+  int remaining_n = g.nodes % 4;
+  for (int j = 0; j < g.edges - remaining_e; j+=4){
     g.nlist[j] &= ~1;
     g.nlist[j+1] &= ~1;
+    g.nlist[j+2] &= ~1;
+    g.nlist[j+3] &= ~1;
   }
   for (int j = g.edges - remaining_e; j < g.edges; j++){
     g.nlist[j] &= ~1;
   }
-  for (int i = 0; i < g.nodes - remaining_n; i+=2){
+  for (int i = 0; i < g.nodes - remaining_n; i+=4){
     parent[i] = -1;
     parent[i+1] = -1;
+    parent[i+2] = -1;
+    parent[i+3] = -1;
   }
   for (int i = g.nodes - remaining_n; i < g.nodes; i++){
     parent[i] = -1;
@@ -477,9 +539,11 @@ static double generateSpanningTree(const Graph& g, const int root, const int see
 
   // bottom up: push counts
   //for (int i = 0; i < g.nodes; i++) label[i] = 1;
-  for (int i = 0; i < g.nodes - remaining_n; i+=2){
+  for (int i = 0; i < g.nodes - remaining_n; i+=4){
     label[i] = 1;
     label[i+1] = 1;
+    label[i+2] = 1;
+    label[i+3] = 1;
   }
   for (int i = g.nodes - remaining_n; i < g.nodes; i++){
     label[i] = 1;
@@ -490,25 +554,31 @@ static double generateSpanningTree(const Graph& g, const int root, const int see
   //     label[parent[node] >> 2] += label[node];
   //   }
   // }
-  int remaining_l = levels % 2;
-  for (int level = levels - 1; level > remaining_l; level -= 2){ // skip level 0 and handle two levels at a time
-    // First iteration of unrolling
+  int remaining_l = levels % 4;
+  for (int level = levels - 1; level > levels - remaining_l; level--){ // skip level 0
     for (int i = border[level]; i < border[level + 1]; i++){
-      const int node = queue[i];
-      label[parent[node] >> 2] += label[node];
-    }
-    int nextLevel = level - 1;
-    if(nextLevel == 0){
-      continue;
-    }
-    for (int i = border[nextLevel]; i < border[nextLevel + 1]; i++)
-    {
       const int node = queue[i];
       label[parent[node] >> 2] += label[node];
     }
   }
-  for (int level = remaining_l; level > 0; level--){ // skip level 0
+  for (int level = levels - remaining_l; level > 0; level -= 4){ // skip level 0 and handle two levels at a time
+    // First iteration of unrolling
     for (int i = border[level]; i < border[level + 1]; i++){
+      if(level == levels){
+        break;
+      }
+      const int node = queue[i];
+      label[parent[node] >> 2] += label[node];
+    }
+    for (int i = border[level-1]; i < border[level]; i++){
+      const int node = queue[i];
+      label[parent[node] >> 2] += label[node];
+    }
+    for (int i = border[level-2]; i < border[level-1]; i++){
+      const int node = queue[i];
+      label[parent[node] >> 2] += label[node];
+    }
+    for (int i = border[level-3]; i < border[level-2]; i++){
       const int node = queue[i];
       label[parent[node] >> 2] += label[node];
     }
@@ -520,7 +590,7 @@ static double generateSpanningTree(const Graph& g, const int root, const int see
 
   // top down: label tree + set nlist flag + set edge info + move tree nodes to front + make parent edge first in list
   label[root] = 0;
-#if 1
+#if 0
   for (int level = 0; level < levels; level++) {
     for (int i = border[level]; i < border[level + 1]; i++) {
       const int node = queue[i];
@@ -588,7 +658,7 @@ static double generateSpanningTree(const Graph& g, const int root, const int see
     }
   }
 #else
-  for (int level = 0; level < levels - remaining_l; level+=2){
+  for (int level = 0; level < levels - remaining_l; level+=4){
     for (int i = border[level]; i < border[level + 1]; i++){
       const int node = queue[i];
       const int par = parent[node] >> 2;
@@ -663,8 +733,156 @@ static double generateSpanningTree(const Graph& g, const int root, const int see
         }
       }
     }
-    int nextlevel = level + 1;
-    for (int i = border[nextlevel]; i < border[nextlevel + 1]; i++){
+    for (int i = border[level+1]; i < border[level+2]; i++){
+      const int node = queue[i];
+      const int par = parent[node] >> 2;
+      const int nodelabel = label[node];
+      const int beg = g.nindex[node];
+      int paredge = -1;
+      int lbl = (nodelabel >> 1) + 1;
+      int pos = beg;
+      for (int j = beg; j < g.nindex[node + 1]; j++){
+        const int neighbor = g.nlist[j] >> 1;
+        if (neighbor == par){
+          paredge = j;
+        }
+        else if ((parent[neighbor] >> 2) == node){
+          const int count = label[neighbor];
+          label[neighbor] = lbl << 1;
+          lbl += count;
+          // set child edge info
+          einfo[j].beg = label[neighbor];
+          einfo[j].end = (einfo[j].end & 1) | ((lbl - 1) << 1);
+          g.nlist[j] |= 1; // child edge is in tree
+          // swap
+          if (pos < j){
+            std::swap(g.nlist[pos], g.nlist[j]);
+            std::swap(einfo[pos], einfo[j]);
+            std::swap(inTree[pos], inTree[j]);
+            std::swap(negCnt[pos], negCnt[j]);
+            if (paredge == pos)
+              paredge = j;
+          }
+          pos++;
+        }
+      }
+      if (paredge >= 0){
+        // set parent edge info
+        einfo[paredge].beg = nodelabel | 1;
+        einfo[paredge].end = (einfo[paredge].end & 1) | ((lbl - 1) << 1);
+        g.nlist[paredge] |= 1; // parent edge is in tree
+        // move parent edge to front of list
+        if (paredge != beg){
+          if (paredge != pos){
+            std::swap(g.nlist[pos], g.nlist[paredge]);
+            std::swap(einfo[pos], einfo[paredge]);
+            std::swap(inTree[pos], inTree[paredge]);
+            std::swap(negCnt[pos], negCnt[paredge]);
+            paredge = pos;
+          }
+          if (paredge != beg){
+            std::swap(g.nlist[beg], g.nlist[paredge]);
+            std::swap(einfo[beg], einfo[paredge]);
+            std::swap(inTree[beg], inTree[paredge]);
+            std::swap(negCnt[beg], negCnt[paredge]);
+          }
+        }
+      }
+
+      if (verify){
+        if (i == 0){
+          if (lbl != g.nodes)
+          {
+            printf("ERROR: lbl mismatch\n");
+            exit(-1);
+          }
+        }
+        int j = beg;
+        while ((j < g.nindex[node + 1]) && (g.nlist[j] & 1))
+          j++;
+        while ((j < g.nindex[node + 1]) && !(g.nlist[j] & 1))
+          j++;
+        if (j != g.nindex[node + 1]){
+          printf("ERROR: not moved %d %d %d\n", beg, j, g.nindex[node + 1]);
+          exit(-1);
+        }
+      }
+    }
+    for (int i = border[level+2]; i < border[level+3]; i++){
+      const int node = queue[i];
+      const int par = parent[node] >> 2;
+      const int nodelabel = label[node];
+      const int beg = g.nindex[node];
+      int paredge = -1;
+      int lbl = (nodelabel >> 1) + 1;
+      int pos = beg;
+      for (int j = beg; j < g.nindex[node + 1]; j++){
+        const int neighbor = g.nlist[j] >> 1;
+        if (neighbor == par){
+          paredge = j;
+        }
+        else if ((parent[neighbor] >> 2) == node){
+          const int count = label[neighbor];
+          label[neighbor] = lbl << 1;
+          lbl += count;
+          // set child edge info
+          einfo[j].beg = label[neighbor];
+          einfo[j].end = (einfo[j].end & 1) | ((lbl - 1) << 1);
+          g.nlist[j] |= 1; // child edge is in tree
+          // swap
+          if (pos < j){
+            std::swap(g.nlist[pos], g.nlist[j]);
+            std::swap(einfo[pos], einfo[j]);
+            std::swap(inTree[pos], inTree[j]);
+            std::swap(negCnt[pos], negCnt[j]);
+            if (paredge == pos)
+              paredge = j;
+          }
+          pos++;
+        }
+      }
+      if (paredge >= 0){
+        // set parent edge info
+        einfo[paredge].beg = nodelabel | 1;
+        einfo[paredge].end = (einfo[paredge].end & 1) | ((lbl - 1) << 1);
+        g.nlist[paredge] |= 1; // parent edge is in tree
+        // move parent edge to front of list
+        if (paredge != beg){
+          if (paredge != pos){
+            std::swap(g.nlist[pos], g.nlist[paredge]);
+            std::swap(einfo[pos], einfo[paredge]);
+            std::swap(inTree[pos], inTree[paredge]);
+            std::swap(negCnt[pos], negCnt[paredge]);
+            paredge = pos;
+          }
+          if (paredge != beg){
+            std::swap(g.nlist[beg], g.nlist[paredge]);
+            std::swap(einfo[beg], einfo[paredge]);
+            std::swap(inTree[beg], inTree[paredge]);
+            std::swap(negCnt[beg], negCnt[paredge]);
+          }
+        }
+      }
+
+      if (verify){
+        if (i == 0){
+          if (lbl != g.nodes){
+            printf("ERROR: lbl mismatch\n");
+            exit(-1);
+          }
+        }
+        int j = beg;
+        while ((j < g.nindex[node + 1]) && (g.nlist[j] & 1))
+          j++;
+        while ((j < g.nindex[node + 1]) && !(g.nlist[j] & 1))
+          j++;
+        if (j != g.nindex[node + 1]){
+          printf("ERROR: not moved %d %d %d\n", beg, j, g.nindex[node + 1]);
+          exit(-1);
+        }
+      }
+    }
+    for (int i = border[level+3]; i < border[level+4]; i++){
       const int node = queue[i];
       const int par = parent[node] >> 2;
       const int nodelabel = label[node];
@@ -824,9 +1042,11 @@ static double generateSpanningTree(const Graph& g, const int root, const int see
   /*for (int j = 0; j < g.edges; j++) {
     inTree[j] += g.nlist[j] & 1;
   }*/
-  for (int j = 0; j < g.edges - remaining_e; j+=2){
+  for (int j = 0; j < g.edges - remaining_e; j+=4){
     inTree[j] += g.nlist[j] & 1;
     inTree[j+1] += g.nlist[j+1] & 1;
+    inTree[j+2] += g.nlist[j+2] & 1;
+    inTree[j+3] += g.nlist[j+3] & 1;
   }
   for (int j = g.edges - remaining_e; j < g.edges; j++) {
     inTree[j] += g.nlist[j] & 1;
@@ -841,14 +1061,16 @@ static double initMinus(const Graph& g, const EdgeInfo* const einfo, bool* const
   timer.start();
 
   // set minus info to true
-  int remaining_n = g.nodes % 2;
-  int remaining_e = g.edges % 2;
+  int remaining_n = g.nodes % 4;
+  int remaining_e = g.edges % 4;
   /*for (int j = 0; j < g.edges; j++) {
     minus[j] = true;
   }*/
-  for (int j = 0; j < g.edges - remaining_e; j+=2){
+  for (int j = 0; j < g.edges - remaining_e; j+=4){
     minus[j] = true;
     minus[j+1] = true;
+    minus[j+2] = true;
+    minus[j+3] = true;
   }
   for (int j = g.edges - remaining_e; j < g.edges; j++){
     minus[j] = true;
@@ -862,7 +1084,7 @@ static double initMinus(const Graph& g, const EdgeInfo* const einfo, bool* const
       j++;
     }
   }*/
-  for (int i = 0; i < g.nodes - remaining_n; i+=2){
+  for (int i = 0; i < g.nodes - remaining_n; i+=4){
     int j = g.nindex[i];
     while ((j < g.nindex[i + 1]) && (g.nlist[j] & 1))
     {
@@ -872,6 +1094,19 @@ static double initMinus(const Graph& g, const EdgeInfo* const einfo, bool* const
 
     j = g.nindex[i+1];
     while ((j < g.nindex[i + 2]) && (g.nlist[j] & 1))
+    {
+      minus[j] = einfo[j].end & 1;
+      j++;
+    }
+    j = g.nindex[i+2];
+    while ((j < g.nindex[i + 3]) && (g.nlist[j] & 1))
+    {
+      minus[j] = einfo[j].end & 1;
+      j++;
+    }
+
+    j = g.nindex[i+3];
+    while ((j < g.nindex[i + 4]) && (g.nlist[j] & 1))
     {
       minus[j] = einfo[j].end & 1;
       j++;
@@ -916,8 +1151,8 @@ static double processCycles(const Graph& g, const int* const label, EdgeInfo* co
       j--;
     }
   }*/
-  int remaining_n = g.nodes % 2;
-  for (int i = 0; i < g.nodes - remaining_n; i+=2){
+  int remaining_n = g.nodes % 4;
+  for (int i = 0; i < g.nodes - remaining_n; i+=4){
     const int target0 = label[i];
     const int target1 = target0 | 1;
     int j = g.nindex[i + 1] - 1;
@@ -952,6 +1187,54 @@ static double processCycles(const Graph& g, const int* const label, EdgeInfo* co
         while (label[curr] != target2){
           int k = g.nindex[curr];
           while ((einfo[k].beg & 1) == ((einfo[k].beg <= target3) && (target2 <= einfo[k].end)))
+            k++;
+          if (verify){
+            if ((k >= g.nindex[curr + 1]) || !(g.nlist[k] & 1)){
+              printf("ERROR: couldn't find path\n");
+              exit(-1);
+            }
+          }
+          sum += einfo[k].end & 1;
+          curr = g.nlist[k] >> 1;
+        }
+        minus[j] = sum & 1; // make cycle have even number of minuses
+      }
+      j--;
+    }
+    const int target4 = label[i+2];
+    const int target5 = target4 | 1;
+    j = g.nindex[i + 3] - 1;
+    while ((j >= g.nindex[i+2]) && !(g.nlist[j] & 1)){
+      int curr = g.nlist[j] >> 1;
+      if (curr > i + 2){ // only process edges in one direction
+        int sum = 0;
+        while (label[curr] != target4){
+          int k = g.nindex[curr];
+          while ((einfo[k].beg & 1) == ((einfo[k].beg <= target5) && (target4 <= einfo[k].end)))
+            k++;
+          if (verify){
+            if ((k >= g.nindex[curr + 1]) || !(g.nlist[k] & 1)){
+              printf("ERROR: couldn't find path\n");
+              exit(-1);
+            }
+          }
+          sum += einfo[k].end & 1;
+          curr = g.nlist[k] >> 1;
+        }
+        minus[j] = sum & 1; // make cycle have even number of minuses
+      }
+      j--;
+    }
+    const int target6 = label[i+3];
+    const int target7 = target6 | 1;
+    j = g.nindex[i + 4] - 1;
+    while ((j >= g.nindex[i+3]) && !(g.nlist[j] & 1)){
+      int curr = g.nlist[j] >> 1;
+      if (curr > i + 3){ // only process edges in one direction
+        int sum = 0;
+        while (label[curr] != target6){
+          int k = g.nindex[curr];
+          while ((einfo[k].beg & 1) == ((einfo[k].beg <= target7) && (target6 <= einfo[k].end)))
             k++;
           if (verify){
             if ((k >= g.nindex[curr + 1]) || !(g.nlist[k] & 1)){
@@ -1003,10 +1286,12 @@ static void determineCCs(const Graph& g, int* const label, const bool* const min
   /*for (int v = 0; v < g.nodes; v++) {
     label[v] = v;
   }*/
-  int remaining_n = g.nodes % 2;
-  for (int v = 0; v < g.nodes - remaining_n; v+=2){
+  int remaining_n = g.nodes % 4;
+  for (int v = 0; v < g.nodes - remaining_n; v+=4){
     label[v] = v;
     label[v+1] = v + 1;
+    label[v+2] = v + 2;
+    label[v+3] = v + 3;
   }
   for (int v = g.nodes - remaining_n; v < g.nodes; v++){
     label[v] = v;
@@ -1062,16 +1347,20 @@ static void determineCCs(const Graph& g, int* const label, const bool* const min
   for (int v = 0; v < g.nodes; v++) {
     count[label[v]]++;
   }*/
-  for (int v = 0; v < g.nodes - remaining_n; v+=2){
+  for (int v = 0; v < g.nodes - remaining_n; v+=4){
     count[v] = 0;
     count[v+1] = 0;
+    count[v+2] = 0;
+    count[v+3] = 0;
   }
   for (int v = g.nodes - remaining_n; v < g.nodes; v++){
     count[v] = 0;
   }
-  for (int v = 0; v < g.nodes - remaining_n; v+=2){
+  for (int v = 0; v < g.nodes - remaining_n; v+=4){
     count[label[v]]++;
     count[label[v+1]]++;
+    count[label[v+2]]++;
+    count[label[v+3]]++;
   }
   for (int v = g.nodes - remaining_n; v < g.nodes; v++){
     count[label[v]]++;
@@ -1084,12 +1373,22 @@ static void determineCCs(const Graph& g, int* const label, const bool* const min
       if (count[hi] < count[v]) hi = v;
     }
   }*/
-  for (int v = 1; v < g.nodes - remaining_n; v+=2){
-    if (count[hi] < count[v]){
-      hi = v;
+  for (int v = 0; v < g.nodes - remaining_n; v+=4){
+    if(v == 0){
+        hi = 0;
+    }else{
+      if (count[hi] < count[v]){
+        hi = v;
+      }
     }
     if (count[hi] < count[v+1]){
       hi = v + 1;
+    }
+    if (count[hi] < count[v+2]){
+      hi = v + 2;
+    }
+    if (count[hi] < count[v+3]){
+      hi = v + 3;
     }
   }
   for (int v = g.nodes - remaining_n; v < g.nodes; v++){
@@ -1113,7 +1412,7 @@ static void determineCCs(const Graph& g, int* const label, const bool* const min
       }
     }
   }*/
-  for (int v = 0; v < g.nodes - remaining_n; v+=2){
+  for (int v = 0; v < g.nodes - remaining_n; v+=4){
     const int lblv = label[v];
     if (lblv == v){
       count[lblv] = (lblv == hi) ? 0 : INT_MAX - 1; // init count
@@ -1134,6 +1433,28 @@ static void determineCCs(const Graph& g, int* const label, const bool* const min
       const int lbln = label[nli];
       if (lblv1 < lbln){ // only one direction
         ws.insert(std::make_pair(lblv1, lbln));
+      }
+    }
+    const int lblv2 = label[v+2];
+    if (lblv2 == v + 2){
+      count[lblv2] = (lblv2 == hi) ? 0 : INT_MAX - 1; // init count
+    }
+    for (int j = g.nindex[v+2]; j < g.nindex[v + 3]; j++){
+      const int nli = g.nlist[j] >> 1;
+      const int lbln = label[nli];
+      if (lblv2 < lbln){ // only one direction
+        ws.insert(std::make_pair(lblv2, lbln));
+      }
+    }
+    const int lblv3 = label[v+3];
+    if (lblv3 == v + 3){
+      count[lblv3] = (lblv3 == hi) ? 0 : INT_MAX - 1; // init count
+    }
+    for (int j = g.nindex[v+3]; j < g.nindex[v + 4]; j++){
+      const int nli = g.nlist[j] >> 1;
+      const int lbln = label[nli];
+      if (lblv3 < lbln){ // only one direction
+        ws.insert(std::make_pair(lblv3, lbln));
       }
     }
   }
@@ -1174,9 +1495,11 @@ static void determineCCs(const Graph& g, int* const label, const bool* const min
   /*for (int v = 0; v < g.nodes; v++) {
     inCC[v] += (count[label[v]] % 2) ^ 1;
   }*/
-  for (int v = 0; v < g.nodes - remaining_n; v+=2){
+  for (int v = 0; v < g.nodes - remaining_n; v+=4){
     inCC[v] += (count[label[v]] % 2) ^ 1;
     inCC[v+1] += (count[label[v+1]] % 2) ^ 1;
+    inCC[v+2] += (count[label[v+2]] % 2) ^ 1;
+    inCC[v+3] += (count[label[v+3]] % 2) ^ 1;
   }
   for (int v = g.nodes - remaining_n; v < g.nodes; v++){
     inCC[v] += (count[label[v]] % 2) ^ 1;
@@ -1260,13 +1583,15 @@ int main(int argc, char* argv[])
   // output results to file
   FILE *f = fopen(argv[3], "wt");
   fprintf(f, "original node ID, percentage node was in agreeable majority\n");
-  int remaining_n = g.nodes % 2;
+  int remaining_n = g.nodes % 4;
   /*for (int i = 0; i < g.nodes; i++) {
     fprintf(f, "%d,%.1f\n", g.origID[i], 100.0 * inCC[i] / iterations);
   }*/
-  for (int i = 0; i < g.nodes - remaining_n; i+=2){
+  for (int i = 0; i < g.nodes - remaining_n; i+=4){
     fprintf(f, "%d,%.1f\n", g.origID[i], 100.0 * inCC[i] / iterations);
     fprintf(f, "%d,%.1f\n", g.origID[i+1], 100.0 * inCC[i+1] / iterations);
+    fprintf(f, "%d,%.1f\n", g.origID[i+2], 100.0 * inCC[i+2] / iterations);
+    fprintf(f, "%d,%.1f\n", g.origID[i+3], 100.0 * inCC[i+3] / iterations);
   }
   for (int i = g.nodes - remaining_n; i < g.nodes; i++){
     fprintf(f, "%d,%.1f\n", g.origID[i], 100.0 * inCC[i] / iterations);
@@ -1280,7 +1605,7 @@ int main(int argc, char* argv[])
       }
     }
   }*/
-  for (int v = 0; v < g.nodes - remaining_n; v+=2){
+  for (int v = 0; v < g.nodes - remaining_n; v+=4){
     for (int j = g.nindex[v]; j < g.nindex[v + 1]; j++){
       const int n = g.nlist[j] >> 1;
       if (v < n){ // only print one copy of each edge (other copy does not have correct negCnt)
@@ -1291,6 +1616,18 @@ int main(int argc, char* argv[])
       const int n = g.nlist[j] >> 1;
       if (v+1 < n){ // only print one copy of each edge (other copy does not have correct negCnt)
         fprintf(f, "%d,%d,%.1f,%.1f\n", g.origID[v+1], g.origID[n], 100.0 * inTree[j] / iterations, 100.0 * negCnt[j] / iterations);
+      }
+    }
+    for (int j = g.nindex[v+2]; j < g.nindex[v + 3]; j++){
+      const int n = g.nlist[j] >> 1;
+      if (v+2 < n){ // only print one copy of each edge (other copy does not have correct negCnt)
+        fprintf(f, "%d,%d,%.1f,%.1f\n", g.origID[v+2], g.origID[n], 100.0 * inTree[j] / iterations, 100.0 * negCnt[j] / iterations);
+      }
+    }
+    for (int j = g.nindex[v+3]; j < g.nindex[v + 4]; j++){
+      const int n = g.nlist[j] >> 1;
+      if (v+3 < n){ // only print one copy of each edge (other copy does not have correct negCnt)
+        fprintf(f, "%d,%d,%.1f,%.1f\n", g.origID[v+3], g.origID[n], 100.0 * inTree[j] / iterations, 100.0 * negCnt[j] / iterations);
       }
     }
   }

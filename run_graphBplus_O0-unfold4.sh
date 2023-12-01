@@ -13,9 +13,9 @@ for i in "${!input_files[@]}"
 do
     input_file="${input_files[i]}"
     output_file="${output_files[i]}"
-    cmd_line="${work_dir}/graphBplus_serial_unfold ${root_dir}/data/${input_file} 100 ${root_dir}/data/results/${output_file}"
+    cmd_line="${work_dir}/graphBplus_serial_unfold-4 ${root_dir}/data/${input_file} 100 ${root_dir}/data/unfold4_results/${output_file}"
     cd $work_dir
-    time ${cmd_line} > run$((i+1)).O0.out
+    time ${cmd_line} > run$((i+1))_unfold4.O0.out
     set +x
 done 
 
